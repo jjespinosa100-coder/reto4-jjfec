@@ -1,0 +1,38 @@
+RETO 4 - CANALES SEGUROS APOYADOS EN METODOS DE CIFRADO
+Jose Jhon Fredy Espinosa Cuevas - CC 1006456958 - Curso 219027 - UNAD
+Proyecto GNS3: JJFEC
+
+ARCHIVOS
+  innovatech_envio.sh         Script UNICO de envio (va en JJFEC-SRV-BOG). Procesa
+                              cualquier PROY/INFO/CONT-########-DDMMAAAA.txt de
+                              /Transferencias/*/ sin cambiar el codigo y sin
+                              interaccion: Base64, AES-256 + RSA-OAEP, SHA-256,
+                              firma RSA-PSS, SFTP con llave Ed25519 y verificacion
+                              del hash en el destino.
+  techtransfer_recepcion.sh   Receptor del proveedor (va en JJFEC-SFTP-TT): revisa
+                              firma, hash y reenvios; descifra o pone en cuarentena.
+  preparar_origen.sh          Puesta a punto de SRV-BOG (usuario de servicio, llaves,
+                              configuracion, temporizadores PROY/INFO/CONT, pruebas).
+  preparar_proveedor.sh       Puesta a punto de SFTP-TT (usuario enjaulado, sshd solo
+                              con llave, llaves RSA, temporizador del receptor, pruebas).
+  SHA256SUMS.txt              Hash de cada script para comprobar la descarga.
+
+DIRECCIONES DEL LABORATORIO (topologia liviana)
+  JJFEC-SRV-BOG   100.64.56.95  (LAN Bogota armada con la CC 1006456958)
+  JJFEC-PFSENSE-BOG  LAN 100.64.56.1 / WAN 192.168.42.10 (hace NAT)
+  JJFEC-SFTP-TT   192.168.42.20  (servidor SFTP del proveedor)
+  Usuario de los CentOS: cloud-user  clave: centos
+
+ORDEN DE USO (cada comando con sudo, desde la carpeta donde quedaron los scripts)
+  1. SFTP-TT : ./preparar_proveedor.sh instalar -o 192.168.42.10
+  2. SRV-BOG : ./preparar_origen.sh instalar -s 192.168.42.20
+  3. SFTP-TT : ./preparar_proveedor.sh autorizar 'ssh-ed25519 AAAA...'   (linea que mostro el paso 2)
+  4. SRV-BOG : ./preparar_origen.sh vincular        (comparar la huella con la del paso 1)
+  5. SFTP-TT : ./preparar_proveedor.sh firma        (comparar el SHA-256 con el del paso 4)
+  6. SRV-BOG : ./preparar_origen.sh documentos  y  ./preparar_origen.sh enviar PROY
+  7. SFTP-TT : el temporizador procesa cada 2 min (o: sudo systemctl start techtransfer-recepcion)
+  8. Pruebas : ./preparar_origen.sh pruebas  y  ./preparar_proveedor.sh pruebas
+  9. Evidencia: ./preparar_origen.sh estado  y  ./preparar_proveedor.sh estado
+
+COMPROBAR LA DESCARGA
+  sha256sum -c SHA256SUMS.txt      (todas las lineas deben decir OK)
